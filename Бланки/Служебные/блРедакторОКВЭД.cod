@@ -1,0 +1,203 @@
+class inherited СИС2.БазовыйБланк "Ввод ОКВЭД";
+
+  inobject private
+
+  _PositionDeb: БухУчет.Банки.Выписки.ПозицииДеб;
+  var _ОКВЭД: Классификаторы.БазоваяОКВЭД[];
+  var _Сумма: Numeric[];
+  секцОквэд: TemplateSection;
+  секцКонтроль: TemplateSection;
+
+  inclass public
+
+  func ВыполнитьВвод (locPositionDeb: БухУчет.Банки.Выписки.ПозицииДеб): integer;
+    var locForm: Служебные.блРедакторОКВЭД;
+    locForm = Служебные.блРедакторОКВЭД.Create;
+    locForm._PositionDeb = locPositionDeb;
+    if CmOk = locForm.ShowEx(, Kernel.Window.ModalWindow):
+      Return cmOk;
+    fi;
+  end;
+
+  inobject private
+
+  proc шаблон_ПриОткрытии (Create: Logical);
+    inherited шаблон_ПриОткрытии(Create);
+    ПрочитатьПозицию;
+  end;
+
+
+  func Поле_ПриНажатии (Cell: TemplateCell; Action: Template.ClickTypes): Logical;
+    var locDelta: numeric;
+    var jj: integer;
+    if (Cell.Contents = '+'):
+      Template.BeginModify;
+      if (секцОквэд.Count = 0):
+        секцОквэд.InsertFrame(Cell.Frame);
+      else
+        jj = секцОквэд.FramesCount;
+        секцОквэд.InsertFrame(jj + 1);
+        Cell.SetFocus;
+        if not ДетализацияРавнаПозиции(locDelta):
+          jj = секцОквэд.FramesCount;
+          if (jj > 0):
+            if (_Сумма[jj] = 0):
+              _Сумма[jj] = locDelta;
+            fi;
+          fi;
+        fi;
+      fi;
+      Template.EndModify;
+    elsif (Cell.Contents = 'x'):
+      Template.BeginModify;
+      if (Cell.Owner.Count >= Cell.Frame):
+        try
+          Cell.SetFocus;
+          ExecuteCommand('Kernel.Move.Up', false);
+          Cell.Owner.DeleteFrame(Cell.Frame);
+        except
+        end;
+      fi;
+      Template.EndModify;
+    fi;
+  end;
+
+  func Поле_ПриВходе (Cell: TemplateCell; Index: Integer; Action: Template.EnterTypes): Logical;
+    var локРезультатВыбора: Классификаторы.БазоваяОКВЭД;
+    if (Action = Template.Clear):
+      _ОКВЭД[Index] = nil;
+    else
+      локРезультатВыбора = _ОКВЭД[Index];
+      if cmOk = Классификаторы.картОКВЭД.ВыполнитьВыбор(локРезультатВыбора, 2):
+        _ОКВЭД[Index] = локРезультатВыбора;
+      fi;
+    fi;
+  end;
+
+  func Поле_ПриВводе (Cell: TemplateCell; Value: Variant): Logical;
+    if (Cell.Contents = '_Сумма'):
+      _Сумма[Cell.Frame] = Value as numeric;
+    fi;
+  end;
+
+
+  func Поле_ПриВыводе (Cell: TemplateCell; Value: Variant; Action: Template.OutputTypes; var Format: String): Variant;
+    var locDelta: numeric;
+    if (Cell.Contents = '_ОКВЭД'):
+      Return _ОКВЭД[Cell.Frame] as Классификаторы.БазоваяОКВЭД;
+    elsif (Cell.Contents = '_Сумма'):
+      Return _Сумма[Cell.Frame] as numeric;
+    elsif (Cell.Contents = '_Дельта'):
+      if not ДетализацияРавнаПозиции(locDelta):
+        Return Round(locDelta, 2) as numeric;
+      else
+        Return 0 as numeric;
+      fi;
+    fi;
+  end;
+
+
+  func Поле_ПриВыводе_ЗаголовокОкнаФормы (Cell: TemplateCell; Value: Variant; Action: Template.OutputTypes; var Format: String): String;
+    var aTxt: string[];
+    if (_PositionDeb <> nil):
+      if (_PositionDeb.РеквП <> nil):
+        aTxt[1] = _PositionDeb.РеквП.Имя;
+      fi;
+      --aTxt[2] = 'всего ' + Str(_PositionDeb.Сумма, 2);
+      Return СИС2.СтроковыеФункции.МассивСтрокВТекст(aTxt);
+    fi;
+    --Result = inherited ПолеЗаголовокОкнаФормы_ПриВыводе(Cell, Value, Action, Format);
+  end;
+
+  proc Поле_ПриРисовании (Cell: TemplateCell; Selected: Logical; var Color: Integer; var FieldColor: Integer; Font: Font);
+    if ДетализацияРавнаПозиции:
+      Font.Color = СИС2.Константы.clGray;
+    else
+      Font.Color = СИС2.Константы.clRed;
+    fi;
+  end;
+
+  proc кнОчистить_ПриНажатии (TObj: Button);
+    _ОКВЭД = nil;
+    _Сумма = nil;
+    секцОквэд.FramesCount = 1;
+  end;
+
+  proc кнПоУмолчанию_ПриНажатии (TObj: Button);
+    кнОчистить_ПриНажатии(TObj);
+    ИнициализироватьПоУмолчанию;
+  end;
+
+  proc кнОК_ПриНажатии (Sender: Button);
+    if (НетНулевыхОКВЭД and ДетализацияРавнаПозиции):
+      ЗаписатьПозицию;
+      inherited кнОК_ПриНажатии(Sender);
+    else
+      Message('Пожалуйста, проверьте корректность введенных данных!');
+    fi;
+  end;
+
+  proc ПрочитатьПозицию;
+    var i, ii: integer;
+    _ОКВЭД = nil;
+    _Сумма = nil;
+    секцОквэд.FramesCount = 1;
+    if (_PositionDeb <> nil):
+      ii = _PositionDeb.ВидЭД.Count;
+      for i = 1 .. ii do
+        _ОКВЭД[i] = _PositionDeb.ВидЭД.Items[i].ОКВЭД;
+        _Сумма[i] = _PositionDeb.ВидЭД.Items[i].Сумма;
+      od;
+      секцОквэд.FramesCount = ii;
+    fi;
+    if (_ОКВЭД = nil) and (_Сумма = nil):
+      ИнициализироватьПоУмолчанию;
+    fi;
+  end;
+
+  proc ИнициализироватьПоУмолчанию;
+    _ОКВЭД[1] = Константы.ОКВЭД_Выручки;
+    _Сумма[1] = _PositionDeb.Сумма;
+    секцОквэд.FramesCount = 1;
+  end;
+
+  proc ЗаписатьПозицию;
+    var i, ii: integer;
+    _PositionDeb.ВидЭД.Clear;
+    ii = Max([LengthOfArray(_ОКВЭД),LengthOfArray(_Сумма)]);
+    for i = 1.. ii do
+      with _PositionDeb.ВидЭД.AddEx do
+        ОКВЭД = _ОКВЭД[i] as Классификаторы.БазоваяОКВЭД;
+        Сумма = _Сумма[i];
+      end;
+    od;
+  end;
+
+  func НетНулевыхОКВЭД: logical;
+    var i, ii: integer;
+    Result = true;
+    ii = Max([LengthOfArray(_ОКВЭД),LengthOfArray(_Сумма)]);
+    for i = 1.. ii do
+      if _ОКВЭД[i] = nil:
+        Result = false;
+        Break;
+      fi;
+    od;
+  end;
+
+  func ДетализацияРавнаПозиции (var locDelta: numeric = nil): logical;
+    var ii: integer;
+    var AllSum: numeric;
+    ii = Max([LengthOfArray(_ОКВЭД),LengthOfArray(_Сумма)]);
+    if (ii = 0):
+      Return true;
+    else
+      if (_PositionDeb <> nil):
+        AllSum = _PositionDeb.Сумма;
+      fi;
+      locDelta = AllSum - SumOfArray(_Сумма);
+      Return (AllSum = SumOfArray(_Сумма));
+    end;
+  end;
+
+end

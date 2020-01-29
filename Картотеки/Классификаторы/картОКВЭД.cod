@@ -1,0 +1,206 @@
+class inherited СИС2.картБазовая "";
+
+import classes Константы;
+
+--{{ Свойства
+
+inclass private stored var ТолькоИзбранное: logical;
+inobject public var Редакция: integer;
+inobject private ЗапретитьВыборРедакции: logical;
+--}}
+
+inclass public
+
+-- 2_Конструкторы, визуализаторы0. --
+
+  func ВыполнитьВыбор (var локРезультатВыбора: Классификаторы.БазоваяОКВЭД; _РедакцияОквэд: integer = 2; _ЗапретитьВыборРедакции: logical = true): integer;
+    var locForm: Классификаторы.картОКВЭД;
+    locForm = Классификаторы.картОКВЭД.Create;
+    locForm.Редакция = _РедакцияОквэд;
+    locForm.ЗапретитьВыборРедакции = _ЗапретитьВыборРедакции;
+    if CmOk = locForm.ShowEx(локРезультатВыбора, , Kernel.Window.ModalWindow):
+      Return CmOk;
+    fi;
+  end;
+
+inobject private
+
+-- 2_Обработчики событий шаблона0. --
+
+  proc шаблон_ПриОткрытии (Create :Logical);
+    --Запретить_Редактирование = true;
+    Запретить_ДобавлениеГрупп = true;
+    Запретить_Преобразование = true;
+    Запретить_Перенос = true;
+    Запретить_Удаление = true;
+    Запретить_Дублирование = true;
+    if (Редакция <= 0):
+      Редакция = ОК_029_2014_2_0 as integer;
+    fi;
+    ОбновитьСписокПоляШаблона(Template.CellByField['Редакция'], РедакцииОквэд);
+    inherited шаблон_ПриОткрытии(Create);
+    Self.CardFile.GroupsFirst = false;
+    Self.CardFile.Order = 'Избранное-;Код+';
+    Self.CardFile.TreeOrder = 'Код';
+    Template.CellByField['Редакция'].Enabled = not ЗапретитьВыборРедакции;
+  end;
+
+-- 2_Обработчики событий клеток шаблона0. --
+
+  proc Поле_ПриВыходе (Cell: TemplateCell; Index: Integer);
+    ОбновитьФильтр;
+    ФокусНаКартотеку;
+  end;
+
+-- 2_Обработчики событий картотеки0. --
+
+  func Картотека_ПриНажатии (Action: Template.ClickTypes; Column: CardfileColumn; Record: Record): Logical;
+    if (Action = Template.DoubleClick) or (Action = Template.EnterPressed):
+      if (not Запретить_Выбор) and (Window.Modal):
+        Close(cmOk);
+      else
+        Result = true; -- Продолжить стандартную обработку
+      fi;
+    else
+      Result = true;
+    fi;
+  end;
+
+-- 2_Обработчики событий столбцов картотеки0. --
+
+  proc Избранное_ПриВыходе (Column: CardfileColumn; Rec: Классификаторы.БазоваяОКВЭД);
+    ОтметитьВерхнийУровень(Rec);
+    ОтметитьНижнийУровень(Rec);
+  end;
+
+-- 2_Прочие методы
+
+  --@doc Обработка сырых данных, импортированных из других иcточников: формирование описания заиси
+  proc Act1;
+    with Query.Create([Классификаторы.ОКВЭД2]) do
+      Select;
+      while not Eof do
+        Current.описание = Current.Код + ' ' + Current.Имя;
+        Next;
+      od;
+    end;
+  end;
+
+  --@doc Обработка сырых данных, импортированных из других иcточников: правильная группировка
+  proc Act2;
+    var t, tt: integer;
+    proc Grp(RootR: Классификаторы.ОКВЭД2);
+      var RootCode: string;
+      RootCode = RootR.Код;
+      with Query.Create([Классификаторы.ОКВЭД2]) do
+        Filter = 'Match(Код, "' + RootCode +'*") and Код<>"' + RootCode + '"';
+        if RecordsExists:
+          RootR.isGroup = true;
+          Select;
+          while not Eof do
+            Current.GroupDoc = RootR;
+            Next;
+          od;
+        fi;
+      end;
+    end;
+    proc LevelGrp(Mask: string);
+      with Query.Create([Классификаторы.ОКВЭД2]) do
+        Filter = 'Match(Код, "' + Mask + '")';
+        tt = Count;
+        Select;
+        while not Eof do
+          t = t + 1;
+          Hint(Mask + ' : ' + Current.Код, t, tt);
+          Grp(Current);
+          Next;
+        od;
+      end;
+    end;
+    LevelGrp('??');
+    LevelGrp('??.?');
+    LevelGrp('??.??');
+    LevelGrp('??.??.?');
+  end;
+
+-- 2_Вспомогательные методы0. --
+
+  --@doc Ф-я перекрывает СИС2
+  func ПолучитьФильтрКартотеки (var locTreeFilter: string = nil): string;
+    var locClass[]: Class Record;
+    var aFlt: string[];
+    locClass[1] = Классификаторы.ОКВЭД;
+    locClass[2] = Классификаторы.ОКВЭД2;
+    Cardfile.Documents = locClass;
+    aFlt[1] = ФильтрПриОткрытии;
+    if (Редакция = (ОК_029_2001_1_0 as integer)):
+      aFlt[2] = 'ClassType=' + Str(locClass[1]);
+    elsif (Редакция = (ОК_029_2014_2_0 as integer)):
+      Cardfile.Documents = [locClass[2]];
+      aFlt[2] = 'ClassType=' + Str(locClass[2]);
+    fi;
+    if ТолькоИзбранное:
+      aFlt[3] = 'Избранное';
+    fi;
+    Result = Фильтры.СложитьСтрокиФильтраПоИ(aFlt);
+    locTreeFilter = Фильтры.GetFilterTreeByFilter([Классификаторы.ОКВЭД,Классификаторы.ОКВЭД2], Result);
+  end;
+
+  --@doc Рекурсивная отметка "Избранное" верхних уровней иерархии
+  proc ОтметитьВерхнийУровень (Rec: Классификаторы.БазоваяОКВЭД);
+    if (Rec.Избранное):
+      if (Rec.GroupDoc <> nil):
+        Rec.GroupDoc.Избранное = true;
+        ОтметитьВерхнийУровень(Rec.GroupDoc);
+      fi;
+    elsif (not Rec.Избранное):
+      if (Rec.GroupDoc <> nil):
+        with Query.Create([Rec.ClassInfo.ClassRef as Class Record]) do
+          Filter = 'Избранное and GroupDoc=' + Str(Rec.GroupDoc);
+          Select;
+          if (not RecordsExists):
+            Rec.GroupDoc.Избранное = false;
+            ОтметитьВерхнийУровень(Rec.GroupDoc);
+          fi;
+        Close;
+        end;
+      fi;
+    fi;
+  end;
+
+  proc ОтметитьНижнийУровень (Rec: Классификаторы.БазоваяОКВЭД);
+    if (Rec.isGroup):
+      with Query.Create([Rec.ClassInfo.ClassRef as Class Record]) do
+        Filter = 'GroupDoc=' + Str(Rec);
+        Select;
+        while not Eof do
+          Current.Избранное = Rec.Избранное;
+          ОтметитьНижнийУровень(Current);
+          Next;
+        od;
+        Close;
+      end;
+    fi;
+  end;
+
+  proc ОбновитьСписокПоляШаблона synonym ОбновитьСписокКлеткиШаблона (locCell: TemplateCell; locList: variant[2]; ИндексКода: integer = 1; ИндексОписания: integer = 2);
+    var i, ii: integer;
+    if (locCell <> nil):
+      locCell.List.Clear;
+      ii = LengthOfArray(locList);
+      for i = 1 .. ii do
+        locCell.List.Add(locList[i,ИндексОписания] as String + '|' + Str(locList[i,ИндексКода]));
+      od;
+    fi;
+  end;
+
+  proc ФокусНаКартотеку;
+    with Self.Query do
+      if not (Bof and Eof):
+        Window.CurrentObject = Window.Cardfile;
+      fi;
+    end;
+  end;
+
+
+end

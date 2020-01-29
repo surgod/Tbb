@@ -1,0 +1,8 @@
+extends БухУчет.Банки.Выписки;
+  struct ПозицииДеб array Integer;
+    struct ВидЭД array Integer; -- Детализация в разрезе вида экономической деятельности
+      field ОКВЭД: Классификаторы.ОКВЭД2;
+      field Сумма: Numeric title "Сумма"; -- часть суммы
+    end;
+  end;
+end;

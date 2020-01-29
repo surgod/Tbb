@@ -1,0 +1,34 @@
+class inherited СИС2.БазовыйБланк "Настройка";
+
+
+  inobject private
+
+  var ОКВЭД_Выручки: Классификаторы.БазоваяОКВЭД;
+
+  proc шаблон_ПриОткрытии(Create :Logical);
+    inherited шаблон_ПриОткрытии(Create);
+    ОКВЭД_Выручки = Константы.ОКВЭД_Выручки;
+  end;
+
+  func Поле_ПриВыводе_ЗаголовокОкнаФормы (Cell: TemplateCell; Value: Variant; Action: Template.OutputTypes; var Format: String): String;
+  end;
+
+  func Поле_ПриВходе (Cell: TemplateCell; Index: Integer; Action: Template.EnterTypes): Logical;
+    var локРезультатВыбора: Классификаторы.БазоваяОКВЭД;
+    if (Action = Template.Clear):
+      ОКВЭД_Выручки = nil;
+    else
+      локРезультатВыбора = ОКВЭД_Выручки;
+      if cmOk = Классификаторы.картОКВЭД.ВыполнитьВыбор(локРезультатВыбора, 2):
+        ОКВЭД_Выручки = локРезультатВыбора;
+      fi;
+    fi;
+  end;
+
+  proc кнОК_ПриНажатии (Sender: Button);
+    Константы.ОКВЭД_Выручки = ОКВЭД_Выручки;
+    inherited кнОК_ПриНажатии(Sender);
+  end;
+
+
+end

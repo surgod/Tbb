@@ -1,0 +1,11 @@
+  reference спрОКВЭД, from Классификаторы.ОКВЭД, card Классификаторы.картОКВЭД, filter 'ClassType=Tbb.Классификаторы.ОКВЭД', title 'ОКВЭД';
+    field Код synonym Имя: String, from Код;
+    field Наименование synonym Описание: String, from Имя;
+  end;
+
+  reference спрОКВЭД2, from Классификаторы.ОКВЭД2, card Классификаторы.картОКВЭД, filter 'ClassType=Tbb.Классификаторы.ОКВЭД2', title 'ОКВЭД2';
+    field Код synonym Имя: String, from Код;
+    field Наименование synonym Описание: String, from Имя;
+    --necessary
+    --00; --  не указан
+  end;

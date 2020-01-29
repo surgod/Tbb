@@ -1,0 +1,125 @@
+extends БухУчет.Документы.Банки.редБанковскиеВыписки "";
+
+  inobject private
+
+  proc шаблон_ПриОткрытии (Create: Logical);
+    inherited шаблон_ПриОткрытии(Create);
+    ДобавитьКнНастройкаОКВЭД;
+    НастроитьКлетку_СуммаПрихода;
+  end;
+
+  proc НастроитьКлетку_СуммаПрихода;
+    var locCell: TemplateCell;
+    locCell = секПриход.CellByField['Сумма'];
+    locCell.Button = true;
+    locCell.OnDraw = 'Поле_ПриРисовании_СуммаПрихода';
+    locCell.OnHint = 'Поле_ПриПодсказке_СуммаПрихода';
+    locCell.OnLookup = 'Поле_ПриОбзоре_СуммаПрихода';
+  end;
+
+  proc ДобавитьКнНастройкаОКВЭД;
+    var newObject, lastObject: TemplateObject;
+    newObject = фреймСервис.AddObject(Button);
+    newObject.Name = 'кнНастройкаОКВЭД';
+    newObject.Caption = 'Настройка ОКВЭД';
+    newObject.OnClick = 'кнНастройкаОКВЭД_ПриНажатии';
+    --
+    lastObject = Template.ObjectByName['рамНеПоказыватьСтолбцы'];
+    SetVewObject(newObject, lastObject, [50, 6], , 2);
+  end;
+
+
+  func Поле_ПриОбзоре_СуммаПрихода (Cell: TemplateCell; Value: Variant; var NewValue: Variant): Logical;
+    var locPosition: БухУчет.Банки.Выписки.ПозицииДеб;
+    locPosition = PositionDebByCell(Cell);
+    Служебные.блРедакторОКВЭД.ВыполнитьВвод(locPosition);
+    Template.EndEdit(true);
+  end;
+
+  proc Поле_ПриРисовании_СуммаПрихода (Cell: TemplateCell; Selected: Logical; var Color: Integer; var FieldColor: Integer; Font: Font);
+    var locPosition: БухУчет.Банки.Выписки.ПозицииДеб;
+    var локСуммаДетализации: numeric;
+    locPosition = PositionDebByCell(Cell);
+    if (locPosition <> nil):
+      if (locPosition.ВидЭД.Count = 0):
+        Font.Color = СИС2.Константы.clMaroon;
+        --Font.Color = СИС2.Константы.clGray;
+        Font.Bold = true;
+      else
+        локСуммаДетализации = locPosition.ВидЭД.SumOfField('Сумма');
+        if (локСуммаДетализации <> locPosition.Сумма):
+          Font.Color = СИС2.Константы.clRed;
+          Font.Bold = true;
+          Font.Italic = true;
+        else
+          Font.Color = СИС2.Константы.clBlue;
+          Font.Italic = true;
+        end;
+      fi;
+    fi;
+  end;
+
+  func Поле_ПриПодсказке_СуммаПрихода (Cell: TemplateCell; var locText: String): Logical;
+    var locPosition: БухУчет.Банки.Выписки.ПозицииДеб;
+    var aTxt: string[];
+    var i, ii, j: integer;
+    locPosition = PositionDebByCell(Cell);
+    if (locPosition <> nil):
+      if (locPosition.ВидЭД.Count = 0):
+        locText = 'Сумма не детализирована по ОКВЭД';
+      else
+        aTxt[1] = 'Детализация по ОКВЭД :';
+        ii = locPosition.ВидЭД.Count;
+        for i = 1 .. ii do
+          j = i + 1;
+          if (locPosition.ВидЭД[i].ОКВЭД <> nil):
+            aTxt[j] = locPosition.ВидЭД[i].ОКВЭД.Код;
+            aTxt[j] = aTxt[j] + ' : ';
+            aTxt[j] = aTxt[j] + Str(locPosition.ВидЭД[i].Сумма, 2);
+            aTxt[j] = aTxt[j] + ' (';
+            aTxt[j] = aTxt[j] + locPosition.ВидЭД[i].ОКВЭД.Имя;
+            aTxt[j] = aTxt[j] + ')';
+          else
+            aTxt[j] = 'ОКВЭД не определен';
+            aTxt[j] = aTxt[j] + ' : ';
+            aTxt[j] = aTxt[j] + Str(locPosition.ВидЭД[i].Сумма, 2);
+          fi;
+        od;
+        locText = СИС2.СтроковыеФункции.МассивСтрокВТекст(aTxt);
+      fi;
+    fi;
+  end;
+
+  func PositionDebByCell (locCell: templateCell): БухУчет.Банки.Выписки.ПозицииДеб;
+    var locIndex: integer;
+    locIndex = locCell.Frame;
+    if (locIndex <= ПозицииДеб.Count):
+      Return ПозицииДеб.ItemsByNumber[locIndex];
+    fi;
+  end;
+
+  proc кнНастройкаОКВЭД_ПриНажатии (Sender: Button);
+    Настройки.блОквэдПоУмолчанию.ShowFormEx(,Window.ModalWindow);
+  end;
+
+  func SetVewObject(locObject: TemplateObject;
+                    locAnchor: TemplateObject=nil;
+                    dfSize: Numeric[] = [40,5.6];
+                    dfLeft: Numeric = 1;
+                    dfMarginUp:numeric=0.5): TemplateObject;
+    if (locObject <> nil):
+      locObject.Width = dfSize[1];
+      locObject.Height = dfSize[2];
+      locObject.Left = dfLeft;
+      if (locAnchor <> nil):
+        locObject.Top = locAnchor.Top + locAnchor.Height + dfMarginUp;
+      else
+        locObject.Top = 1;
+      fi;
+      Return locObject;
+    else
+      Return locAnchor;
+    fi;
+  end;
+
+end

@@ -1,0 +1,21 @@
+Domain Бухгалтерия notaccumulated, bytrans, closeable;
+
+  Journal ОКВЭД_БанковскаяВыписка title "Выписка банка - детализация по ОКВЭД для налогового учета";
+    Records     БухУчет.Банки.Выписки;
+    Filter      'ДатаПроведения>01.01.1900';
+    Card        БухУчет.Документы.Банки.картБанковскиеВыписки;
+    DateField   ДатаПроведения;
+    EnableField Проводить;
+
+    Operation Tbb.Картотечные.НалоговыйУчет.Приход_Банк from ПозицииДеб.ВидЭД; -- Приход
+      parameter ПроводитьСтроку   from '^Проводить';
+      parameter Сумма             from Сумма;
+      parameter Валюта            from '^^Вал';
+      parameter Наше              from '^^Рекв';
+      parameter НомерСтроки       from '^Index';
+      parameter НомерДокумента    from '^НомерБум';
+      parameter ОКВЭД             from ОКВЭД;
+      parameter Комментарий       from '^Т';
+    end;
+
+  end;

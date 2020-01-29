@@ -1,0 +1,32 @@
+class "";
+
+  --import Базовый  Classes ИнтерфейсНастроек;
+  import Первичка Classes Базовые.БазоваяОперация;
+
+  опер Приход_Банк (ПроводитьСтроку: logical = true;
+                    Сумма: numeric;
+                    Валюта: Базовый.спрЕдИзм = nil;
+                    Наше: Первичка.спрНашиПредприятия;
+                    НомерСтроки: integer;
+                    НомерДокумента: string;
+                    ОКВЭД: спрОКВЭД2 = nil;
+                    Комментарий: string = '');
+    var локДопПарам: ParamStorage;
+    локДопПарам = ParamStorage.Create(DomainBuh);
+    локДопПарам.ОКВЭД2 = ОКВЭД;
+    Простая_Дебет(Налоговые.НУ.90.1, Сумма, Валюта, Валюта, Наше, НомерСтроки, локДопПарам, Комментарий);
+  end;
+
+
+  func DomainBuh: AccDomain;
+    if (AccDomainBuh = nil):
+      AccDomainBuh = СИС2.ОперСистемные.FindDomainByName('Бухгалтерия');
+    fi;
+    Result = AccDomainBuh;
+  end;
+
+  inclass private
+
+  var AccDomainBuh: AccDomain;
+
+end

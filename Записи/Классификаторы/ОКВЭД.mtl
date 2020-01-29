@@ -1,0 +1,12 @@
+abstract hierarchical record БазоваяОКВЭД inherited МашинаРеквизитов.Базовые.БазоваяКодИмя;
+  field GroupPath: String(MaxIndexedStr);
+  field Избранное: Logical title "Избранное";
+  field Описание: String(MaxStr) title "Код + название";
+  recorddescription Описание;
+end;
+
+record ОКВЭД inherited БазоваяОКВЭД title "Общероссийский классификатор видов экономической деятельности ОК 029-2001 (КДЕС Ред.1)";
+end;
+
+record ОКВЭД2 inherited БазоваяОКВЭД title "Общероссийский классификатор видов экономической деятельности ОК 029-2014 (КДЕС Ред. 2)";
+end;

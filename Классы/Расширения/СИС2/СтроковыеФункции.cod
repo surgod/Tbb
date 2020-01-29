@@ -1,0 +1,47 @@
+extends СИС2.СтроковыеФункции;
+
+  inclass public
+
+  func МассивСтрокВТекст (locStr: String[]; РазрывЭлементов, АвтоПробел: Logical = true): String;
+    var i, ii, j: integer;
+    ii = LengthOfArray(locStr);
+    if РазрывЭлементов:
+      for i = 1 .. ii do
+        Result = if((i < ii), (Result + locStr[i] + Br), (Result + locStr[i]));
+      od;
+    else
+      if АвтоПробел:
+        for i = 1 .. ii do
+          if (locStr[i] <> nil):
+            j = j + 1;
+            if (j = 1):
+              Result = Trim(locStr[i]);
+            else
+              Result = Result + ' ' + Trim(locStr[i]);
+            fi;
+          fi;
+        od;
+      else
+        for i = 1 .. ii do
+          Result = Result + locStr[i];
+        od;
+      fi;
+    fi;
+  end;
+
+  --@doc Возвращает символ "Возврат каретки"
+  func ВозвратКаретки synonym Br, CR: string;
+    return Chr(13);
+  end;
+
+  --@doc Возвращает символ "Перевод строки"
+  func ПереводСтроки synonym LF: string;
+    return Chr(10);
+  end;
+
+  --@doc Возвращает символ "табуляция", n - количество повторов
+  func TAB (n: integer = 1): string;
+    return RepStr(chr(09), n);
+  end;
+
+end

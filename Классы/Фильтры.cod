@@ -1,0 +1,344 @@
+class "‘ункции формировани€ фильтров дл€ записей";
+
+inclass  private
+
+--CardName: class[] record;
+FieldName1: string = 'ƒатаЌачала';
+FieldName2: string = 'ƒатаќкончани€';
+
+func SomeFieldsFilterByDates (DateB: date; DateE: date; Field1: string = FieldName1; Field2: string = FieldName2; ExtrFilter: string = nil): string;
+  var Ќачало¬ѕериоде,  онец¬ѕериоде: string;
+  if ((DateB = nil) and (DateE = nil)):
+      Result = ExtrFilter;
+  elsif ((DateB <> nil) and (DateE = nil)): -- ограничение только на начало периода:
+      Ќачало¬ѕериоде = '(' + Field1 + '<=' + Str(DateB) + ') or (' + Field1 + '=nil)'; -- дата начала не позже ограничени€ или не определена
+       онец¬ѕериоде  = '(' + Field2 + '>=' + Str(DateB) + ') or (' + Field2 + '=nil)'; -- дата окончани€ не раньше ограничени€ или не определена
+      Result = '(' + Ќачало¬ѕериоде + ') and (' +  онец¬ѕериоде + ')';
+      Result = '(' + Result + ') ' + if((ExtrFilter <> nil), ' and (' + ExtrFilter + ')', '');
+  elsif ((DateB = nil) and (DateE <> nil)): -- ограничение только на конец периода:
+      Ќачало¬ѕериоде = '(' + Field1 + '<=' + Str(DateE) + ') or (' + Field1 + '=nil)'; -- дата начала не позже ограничени€ или не определена
+       онец¬ѕериоде  = '(' + Field2 + '>=' + Str(DateE) + ') or (' + Field2 + '=nil)'; -- дата окончани€ не раньше ограничени€ или не определена
+      Result = '(' + Ќачало¬ѕериоде + ') and (' +  онец¬ѕериоде + ')';
+      Result = '(' + Result + ') ' + if((ExtrFilter <> nil), ' and (' + ExtrFilter + ')', '');
+  elsif ((DateB <> nil) and (DateE <> nil)):
+    if (DateB = DateE):
+      Result = '(' + Field1 + '<=' + Str(DateB) + ' or ' + Field1 + '=nil)' + ' and ' + '(' + Field2 + '>=' + Str(DateE) + ' or ' + Field2 + '=nil)';
+      Result = '(' + Result + ') ' + if((ExtrFilter <> nil), ' and (' + ExtrFilter + ')', '');
+     else
+      Ќачало¬ѕериоде = '(' + Field1 + '<=' + Str(DateE) + ') or (' + Field1 + '=nil)';
+       онец¬ѕериоде  = '(' + Field2 + '>=' + Str(DateB) + ') or (' + Field2 + '=nil)';
+      Result = '(' + Ќачало¬ѕериоде + ') and (' +  онец¬ѕериоде + ')';
+      Result = '(' + Result + ') ' + if((ExtrFilter <> nil), ' and (' + ExtrFilter + ')', '');
+    fi;
+  fi;
+end;
+
+inclass  public
+
+--@doc ‘ункци€ строкового типа, возвращающа€ фильтр на актуальные записи на дату запроса.
+--@doc јргумент - только дата запроса.
+func ‘ильтрѕоƒате (DateB: date; Field1: string = FieldName1; Field2: string = FieldName2): string;
+  Result = SomeFieldsFilterByDates(DateB, DateB, Field1, Field2);
+end;
+
+--@doc ‘ункци€ строкового типа, возвращающа€ фильтр на записи, актуальные позднее даты запроса.
+--@doc јргумент - только дата запроса.
+func ‘ильтрѕоƒатеѕозднее (DateE: date; Field2: string = FieldName2): string;
+  if (DateE <> nil):
+    Result = '(' + Field2 + '>=' + Str(DateE) + ') or (' + Field2 + '=nil)'; -- дата окончани€ не раньше ограничени€ или не определена
+  fi;
+end;
+
+
+--@doc ‘ункци€ строкового типа, возвращающа€ фильтр на актуальные записи на диапазон дат запроса.
+--@doc јргументы - дата начала и дата окончани€ периода запроса. ѕод фильтр должны попадать не только
+--@doc те записи, у которых период актуальности целиком ложитс€ в диапазон дат запроса, но и те, у которых период актуальности начинаетс€ или заканчиваетс€ между датами запроса.
+func ‘ильтрѕоƒатам (DateB: date; DateE: date; Field1: string = FieldName1; Field2: string = FieldName2): string;
+  Result = SomeFieldsFilterByDates(DateB, DateE, Field1, Field2);
+end;
+
+--@doc ‘ункци€ логического типа, определ€юща€ актуальность конкретной записи по ссылке и дате запроса.
+--@doc јргументы: 1. —сылка на запись. “ип записи (конкретна€ таблица) заранее неизвестен.
+--@doc            ѕоэтому тип первого аргумента должен быть просто Record, а в функции необходимо
+--@doc            предусмотреть проверку на наличие в тестируемой записи полей "ƒатаЌачала" и "ƒатаќкончани€".
+--@doc 2. ƒата запроса.
+--@doc јналогична€ функци€ дл€ диапазона дат.
+func «апись—уществуетЌаƒаты Synonym RecExistInDates (TheRec: record; DateB: date; DateE: date; Field1: string = FieldName1; Field2: string = FieldName2): logical;   --
+  var TheFilter: string;
+  var TheQuery: Query;
+  TheFilter = SomeFieldsFilterByDates(DateB, DateE, Field1, Field2);--SomeFieldsFilterByDates(DateB, DateE);
+  TheQuery = Query.Create;
+  TheQuery.Records = [TheRec.ClassType];--CardName;
+  TheQuery.LoadingFields = Field1 + ';' + Field2;
+  TheQuery.Filter = TheFilter;
+  Result = TheQuery.MatchFilter(TheRec);
+end;
+
+func «апись—уществуетЌаƒату (TheRec: record; DateB: date; Field1: string = FieldName1; Field2: string = FieldName2) :logical;
+  result = RecExistInDates(TheRec, DateB, DateB);
+end;
+
+ ------------- фильтры на иерархические записи -----------
+
+--@doc “иповой фильтр
+func “олько√руппы: string; Result = 'isGroup=-1';
+end;
+
+--@doc “иповой фильтр
+func  роме√рупп: string; Result = 'isGroup<>-1';
+end;
+
+
+-- ƒобавл€ет GroupPath в отсортированный массив GroupPathS
+-- необ€зательный параметр NotIn не включает в результат цепочки, вход€щие в другие
+--  1.2.3 не попадет в результат, если есть 1.2.3.4
+ func ƒобавитьѕуть√руппы Synonym GroupPathADD (var GroupPathS: String[]; GroupPath: String; NotIn: Logical = false): Integer;
+   var j: Integer;
+   if SearchNearestInArray(GroupPathS, GroupPath, j):
+     return 0;-- уже есть такой GroupPath
+   fi;
+   if (not NotIn) or (j > LengthOfArray(GroupPathS)) or (Pos(GroupPath, GroupPathS[j]) <> 1):
+     InsertInArray(GroupPathS, j, GroupPath);
+     return j;
+   fi;
+   return 0;
+ end;
+
+-- дополн€ет массив GroupPathS недостающими GroupPath из запроса с фильром,
+-- запрос не пересчитываетс€, если его фильтр совпадает с вход€щим RecordsFilter,
+-- а режим загрузки полей, загружаемые пол€, поле сортировки равны соответственно 0, "GroupPath;IsGroup;DocID", "GroupPath"
+-- ! GroupPathS об€зательно отсортирован в пор€дке возрастани€ или пустой!
+-- необ€зательный параметр NotIn не включает в результат цепочки, вход€щие в другие
+--  1.2.3 не попадет в результат, если есть 1.2.3.4
+ proc «аполнитьѕути√рупп Synonym FillGroupPathS (var GroupPathS: String[]; Q: Query; RecordsFilter: String; NotIn: Logical = false);
+   var i, j: Integer;
+   var asADD: Logical;
+   var groupPathOld: String;
+    --внутренние функции.......................................................
+    proc GroupPathOldADD;--{
+      i = i + 1; -- подсчет длины массива GroupPathS
+      if asADD: -- добавл€ем внутри массива
+       j = GroupPathADD(GroupPathS, groupPathOld, NotIn);
+       if i <= j and j > 0: -- начали добавл€ть за пределы вход€щего GroupPathS, можем просто добал€ть остальное в конец
+         asADD = false;
+       else
+         if j < 1: -- такой уже есть, т.е. ничего не добавили
+           i = i - 1;
+         fi;
+       fi;
+      else -- простой вариант добавлени€ в конец массива
+       GroupPathS[i] = groupPathOld;
+      fi;
+    end;--}
+
+    func GroupPathCurrent: string;--{
+     Result = Q.Current.GroupPath;
+     if Q.Current.IsGroup:
+       Result = Result + '.' + str(Q.Current.DocID);
+     fi;
+    end;--}
+
+   asADD = (GroupPathS <> nil);
+   if Q.Filter <> RecordsFilter or Q.LoadingFieldsMode <> 0 or Q.LoadingFields <> "GroupPath;IsGroup;DocID" or Q.Order <> "GroupPath":
+   -- не открываем запрос лишний раз
+     if Q.Active :
+       Q.Close;
+     fi;
+     Q.Filter = RecordsFilter;
+     Q.LoadingFieldsMode = 0; -- не загружать пол€
+     Q.LoadingFields = "GroupPath;IsGroup;DocID";
+     Q.Order = "GroupPath";
+   fi;
+   if Q.RecordsExists:
+     i = LengthOfArray(GroupPathS);
+     if not Q.Active :
+       Q.Select;
+     else
+       Q.First;
+     fi;
+     groupPathOld = GroupPathCurrent;
+     while not Q.EOF do
+       Q.Next;
+       if Q.EOF: -- добавл€ем последний элемент
+          GroupPathOldADD;
+       else
+         if (NotIn and Pos(groupPathOld, GroupPathCurrent) <> 1) or (not NotIn and groupPathOld <> GroupPathCurrent):
+           -- сменили значение
+           GroupPathOldADD;
+         fi;
+         groupPathOld = Q.Current.GroupPath;
+       fi;
+     od;
+   fi;
+ end;
+
+-- ”дал€ет из отсортированного по возрастанию GroupPathS цепочки, вход€щие в другие
+ proc ѕути√руппЅез¬хождений Synonym GroupPathSNotIn (var GroupPathS: String[]);
+   var i: Integer;
+   i = LengthOfArray(GroupPathS);
+   if i < 2: return; fi;
+   while i > 1 do
+     while Pos(GroupPathS[i - 1], GroupPathS[i]) = 1 do
+       DeleteFromArray(GroupPathS, i - 1);
+     od;
+     i = i - 1;
+   od;
+ end;
+  --
+--@doc процедура дополн€юща€ массив ListDocId недостающими значени€ми DocID, вз€тыми из GroupPath  - строковой цепочки DocID через точку
+  proc ѕуть√руппыƒобавить¬—писок Synonym GroupPathAddToList(var ListDocId: Integer[]; GroupPath: String);
+    var i, wcount: Integer;
+    var wcurrent: Integer;
+    wcount = WordsCount(GroupPath, '.');
+    for i = wcount..1 step -1 do
+      wcurrent = int(ExtractWord(GroupPath, i, '.'));
+      if SearchInArray(ListDocId, wcurrent, ,true) < 1 then
+         —»—2.‘ункции.¬ставить«начение¬”пор€доченныйћассив(ListDocId, wcurrent);
+      else break; -- часть ветки была отработана ранее, не отрабатываем повторы
+      fi;
+    od;
+  end;
+
+--@doc ‘ункци€ дополн€юща€ массив locmDocId недостающими значени€ми DocID, вз€тыми из массива таких цепочек - GroupPathS
+ Proc ѕути√руппƒобавить¬—писок Synonym GroupPathsAddToList(var GroupPathS: String[]; var ListDocId: Integer[]);
+   var i, ii: Integer;
+   ii = LengthOfArray(GroupPathS);
+   for i = 1 .. ii do
+     GroupPathAddToList(ListDocId, GroupPathS[i]);
+   od;
+ end;
+
+--@doc процедура дополн€юща€ целочисленный массив значени€ми полей DocID записей,
+--@doc €вл€ющимис€ иерархическими предками записей, отобранными вход€щим фильтром
+--@doc јргументы: 1.  ласс записи.
+--@doc 2. фильтр на записи.
+--@doc 3. массив DocID.
+--@doc ! функци€ расчитана на использование в Ќ≈ гетерогенных картотеках
+--@doc ! при использовании в гетерогенной картотеке DocID могут повтор€тьс€ дл€ разных классов записей, что приведет к показу "пустых" ветвей
+--@doc ! поэтому вход€щий аргумент RecordClass  - не массив
+ Proc ƒополнить—писокƒереваѕо‘ильтру Synonym AddDocIDListByFilter(RecordClass: Class Record; RecordsFilter: String; var ListDocId: Integer[]);
+    var groupPathS: String[];
+    var q: Query;
+    --внутренние функции.......................................................
+    --работает по ссылочности
+    proc ƒополнитьћассив лючей(R:Record);--{
+      if (R.isGroup):
+        —»—2.‘ункции.¬ставить«начение¬”пор€доченныйћассив(ListDocId, R.DocId);
+      fi;
+      if (R.GroupDoc <> nil):
+        if SearchInArray(ListDocId, R.GroupDoc, ,true) < 1 then -- исключаем повторный подъем по ветке
+           ƒополнитьћассив лючей(R.GroupDoc);
+        fi;
+      fi;
+    end;--}
+
+    if RecordsFilter = nil: RecordsFilter = "isGroup<>0"; fi;
+    if RecordClass.Hierarchical:
+      q = Query.Create([RecordClass]);
+      if ‘ункции–тти—рв.≈стьѕоле¬ лассе«аписиMTL('GroupPath', RecordClass.ClassInfo):
+        FillGroupPathS(groupPathS, q, RecordsFilter, true); -- исключаем при отборе внутренние пересечени€
+        GroupPathsAddToList(groupPathS, ListDocId);
+      else
+        q.Filter = RecordsFilter;
+        q.LoadingFieldsMode = 0; -- не загружать пол€
+        q.LoadingFields = "DocId;GroupDoc";
+        if q.RecordsExists:
+          q.Select;
+          while not q.EOF do
+            ƒополнитьћассив лючей(q.Current);
+            q.Next;
+          od;
+        fi;
+      fi;
+    fi;
+ end;
+
+ func —писокƒереваѕо‘ильтру Synonym DocIDListByFilter(RecordClass: Class Record; RecordsFilter: String; ListDocId: Integer[] = nil): Integer[];
+   if ListDocId <> nil:
+     Result = ListDocId;
+   fi;
+   AddDocIDListByFilter(RecordClass, RecordsFilter, Result);
+ end;
+
+--@doc ‘ункци€ возвращает фильтр на поле DocID по вход€щему массиву значений DocID,
+--@doc при пустом вход€щем массиве возвращает всегда ложное условие фильра
+ func ћассивDocID ак‘ильтр Synonym ArrayDocIDAsFilter (locmDocId: Integer[] = nil) :String;
+   Result = '';
+   if LengthOfArray(locmDocId) > 0:
+      Result = 'DocId in ' + Str(locmDocId);
+   else
+      Result = 'DocId in [0]';
+   fi;
+ end;
+
+--@doc ‘ункци€ возвращает фильтр на дерево иерархической записи на основании фильтра на данные - RecordsFilter
+--@doc выбирает и пустые ветки
+--@doc при пустом фильре на данные выбирает все дерево, включа€ пустые ветки
+ func ѕолучить‘ильтрƒереваѕо‘ильтру Synonym GetFilterTreeByFilter(Records: Class[] Record; RecordsFilter: String): String;
+   var i, ii: Integer;
+   var filterAll: String[];
+   filterAll = nil;
+   if Records <> nil:
+     if RecordsFilter = nil:
+       filterAll[1] = "IsGroup <> 0"; -- восстанавливаем все дерево, включа€ пустые ветки
+     else
+       ii = LengthOfArray(Records);
+       for i = 1..ii do
+         filterAll[i] = ArrayDocIDAsFilter(—писокƒереваѕо‘ильтру(Records[i], RecordsFilter));
+         if ii > 1: -- при гетерогенном варианте добавл€ем условие на текущий класс записи
+           filterAll[i] = —»—2.—троковые‘ункции.—ложить—троки‘ильтраѕо»([filterAll[i], "classtype = " + Records[i].ClassProject+'.'+Records[i].ClassName]);
+         fi;
+       od;
+     fi;
+     Result = —»—2.—троковые‘ункции.—ложить—троки‘ильтраѕо»ли(filterAll);
+   fi;
+ end;
+
+--@doc ‘ункци€ возвращает фильтр на дерево иерархической записи на основании фильтра на данные - RecordsFilter
+--@doc выбирает не пустые ветки
+--@doc при пустом фильре на данные выбирает все дерево, включа€ пустые ветки
+ func ѕолучить‘ильтрƒереваѕо‘ильтруЌаƒанные Synonym GetFilterTreeByFilterRecord(Records: Class[] Record; RecordsFilter: String): String;
+   if Records <> nil:
+     if RecordsFilter <> nil:
+       RecordsFilter = —»—2.—троковые‘ункции.—ложить—троки‘ильтраѕо»([RecordsFilter, "IsGroup=0 and GroupPath<>nil"]);
+     fi;
+     Result = ѕолучить‘ильтрƒереваѕо‘ильтру(Records, RecordsFilter);
+   fi;
+ end;
+
+ func ћакс»ерархи€ synonym MaxHierarchy (RecordClass: Class Record; ExistGroupPath: Logical = true): Integer;
+ var q: Query;
+    q = Query.Create([RecordClass]);
+    while q.RecordsExists do
+     result = result + 1;
+     if ExistGroupPath then
+        q.filter = 'match(GroupPath,"*?'+RepStr('.?*',result) + '")';
+     else
+        q.filter = 'GroupDoc'+RepStr('.GroupDoc',result) + '=nil';
+     end;
+    od;
+    if not ExistGroupPath then result = result - 1; fi;
+ end;
+
+ func ”ровень¬ложенности synonym LevelRecord (R: Record; ExistGroupPath: Logical = true): Integer;
+   if R <> nil:
+     if  ExistGroupPath then return WordsCount(R.GroupPath, '.'); fi;
+     while R.GroupDoc <> nil do
+       Result = Result + 1;
+       R = R.GroupDoc;
+     end;
+   fi;
+ end;
+
+ -- методы, повтор€ющие одноименные в базовых проектах ƒ»÷ --
+
+ func —ложить—троки‘ильтраѕо» (locFlt: String[]): String;
+   Return —»—2.—троковые‘ункции.—ложить—троки‘ильтраѕо»(locFlt);
+ end;
+
+ func —ложить—троки‘ильтраѕо»Ћ» (locFlt: String[]; »гнорироватьѕустую—троку: Logical = true): String;
+   Return —»—2.—троковые‘ункции.—ложить—троки‘ильтраѕо»Ћ»(locFlt, »гнорироватьѕустую—троку);
+ end;
+
+
+end

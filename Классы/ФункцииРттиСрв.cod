@@ -1,0 +1,14 @@
+class "Функции, использующие информацию RTTI, способные вызываться на сервере процедур";
+
+inclass
+
+  --@doc Есть поле (MTL) в классе записи
+  --@doc служебные системные поля DocID, GroupDoc, isGroup, ExtID не описываются в MTL, хотя и могут присутствовать в базе данных
+  func ЕстьПолеВКлассеЗаписиMTL(const aField: string; RecordClassInfo: ClassInfo): logical;
+    Result = false;
+    if aField <> nil then
+      Result = RecordClassInfo.MemberByName(aField) is FieldInfo;
+    fi;
+  end;
+
+end

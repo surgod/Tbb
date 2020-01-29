@@ -1,0 +1,7 @@
+domain Бухгалтерия notaccumulated, bytrans, closeable;
+
+  extends type счетДоходы;
+    visible
+    parameter ОКВЭД2: спрОКВЭД2 = nil, Noindexed, NotAccumulated title "Вид деятельности по ОКВЭД (ред.2)";
+
+  end;
