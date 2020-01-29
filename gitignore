@@ -1,0 +1,13 @@
+*.#cod
+*.~cod
+*.#acc
+*.#hlp
+*.#mtl
+/*.#prj
+/*.deb
+/*.dsk
+/*.sig
+/*.~prj
+*.bak
+*.~mtl
+*.~~~
