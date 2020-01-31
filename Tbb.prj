@@ -16,5 +16,6 @@
     <Group Name="Картотеки" Type="Cards" Disabled="False"/>
     <Group Name="Бланки" Type="Blanks" Disabled="False"/>
     <Group Name="Shared" Type="Other" Disabled="False"/>
+    <Group Name="НастройкиПечати" Type="Other" Disabled="False"/>
   </Groups>
 </Project>
