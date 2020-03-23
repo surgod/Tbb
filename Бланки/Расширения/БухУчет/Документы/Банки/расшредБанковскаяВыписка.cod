@@ -31,9 +31,14 @@ extends БухУчет.Документы.Банки.редБанковскиеВыписки "";
 
   func Поле_ПриОбзоре_СуммаПрихода (Cell: TemplateCell; Value: Variant; var NewValue: Variant): Logical;
     var locPosition: БухУчет.Банки.Выписки.ПозицииДеб;
-    locPosition = PositionDebByCell(Cell);
-    Служебные.блРедакторОКВЭД.ВыполнитьВвод(locPosition);
-    Template.EndEdit(true);
+    if СИС2.ФункцииДокумента.RecordEdited(Record):
+      if шаблон_ПриПроверке:
+        шаблон_ПриЗаписи;
+        locPosition = PositionDebByCell(Cell);
+        Служебные.блРедакторОКВЭД.ВыполнитьВвод(locPosition);
+        Template.EndEdit(true);
+      fi;
+    fi;
   end;
 
   proc Поле_ПриРисовании_СуммаПрихода (Cell: TemplateCell; Selected: Logical; var Color: Integer; var FieldColor: Integer; Font: Font);
