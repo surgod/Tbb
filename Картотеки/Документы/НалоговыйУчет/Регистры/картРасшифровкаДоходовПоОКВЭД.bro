@@ -13,11 +13,12 @@ Column:2=Дата
 Column:3=ДатаЗаполнения
 Column:4=Период.Имя
 Column:5=Описание
+TreeVisible=1
 TreeWidth=120
 SubTableVisible=1
 SubTableWidth=100
 SubTableHeight=100
-TemplateWidth=70
+TemplateWidth=153
 
 [.Column.Рекв.Имя]
 Caption=Организация

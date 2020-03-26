@@ -8,7 +8,7 @@ type т олонкиѕодтаблицы = (тѕтƒата = 1, тѕт онтрагент, тѕтЌомер, тѕт—умма¬сего, 
 type т–езультат—равнени€ = (тћеньше = 1, т–авно, тЅольше);
 
 var  одыЁƒ: variant[2] = [["62.01", т—умма6201], ["62.02", т—умма6202], ["62.09", т—умма6202], ["46.51", т—умма4651]];
-var ѕол€ѕодтаблицы: string[] = ["ƒатаƒокумента", " онтрагент", "ЌомерЅум", "—умма", "¬идЁд", "—умма", "ќ ¬Ёƒ"];
+var ѕол€ѕодтаблицы: string[] = ["ƒатаƒокумента", "–еквѕ", "ЌомерЅум", "—умма", "¬идЁд", "—умма", "ќ ¬Ёƒ"];
 
 inobject private
 
@@ -172,18 +172,21 @@ end;
 --@doc заполнение бланка
 proc «аполнитьбланк;
   var q: Query;
-  var iter, isub, irec: integer;
+  var iter: integer;
+  --var iter, isub, irec: integer;
+  var лок лонкаѕодтаблицы: т олонкиѕодтаблицы;
   var aFiler: string[];
-  var ares: variant[2];
-  var locDate: Date;
-  var locNum, locT, locExtId: string;
-  var locRekv: Ѕазовый.ƒанные.—убъект;
+  --var ares: variant[2];
+  var мѕозици€: variant[];
+  --var locDate: Date;
+  --var locNum, locT, locExtId: string;
+  --var locRekv: Ѕазовый.ƒанные.—убъект;
   var locSub: Ѕухучет.Ѕанки.¬ыписки.ѕозицииƒеб;
-  if –аспределение¬Ёƒ <> nil:
+  if –аспределение¬Ёƒ = nil:
     –аспределитьќ ¬Ёƒпо олонкам;
   fi;
 
-  ares = nil;
+  --ares = nil;
 
 
   aFiler[1] = "ѕроводить";
@@ -200,67 +203,90 @@ proc «аполнитьбланк;
     q.LoadingFields = "ExtId;ѕроводить;ƒатаѕроведени€;–екв;ѕозицииƒеб;ѕозицииƒеб.ѕроводить;ѕозицииƒеб.ƒатаƒокумента;ѕозицииƒеб.ЌомерЅум;ѕозицииƒеб.–еквѕ;ѕозицииƒеб.“;ѕозицииƒеб.¬идЁд.ќ ¬Ёƒ;ѕозицииƒеб.¬идЁд.—умма";
     q.Filter = —ложитьстроки‘ильтраѕо»(aFiler);
     if q.Count > 0:
-      q.Order = "ѕозицииƒеб.ƒатаƒокумента;ѕозицииƒеб.–еквѕ;ѕозицииƒеб.ЌомерЅум;ѕозицииƒеб.¬идЁд.ќ ¬Ёƒ";
+      --q.Order = "ѕозицииƒеб.ƒатаƒокумента;ѕозицииƒеб.–еквѕ;ѕозицииƒеб.ЌомерЅум;ѕозицииƒеб.¬идЁд.ќ ¬Ёƒ";
       q.Select;
-      while not q.Eof do
-        locSub = q.Current.ѕозицииƒеб;
-        for iter = 1 .. q.Current.ѕозицииƒеб.Count do
-          ares[тƒата, irec] = q.Current.ѕозицииƒеб.items[iter].ƒатаƒокумента;
+
+--type т олонкиѕодтаблицы = (тѕтƒата = 1, тѕт онтрагент, тѕтЌомер, тѕт—умма¬сего, тѕт¬идЁд, тѕт—умма¬идЁд, тѕтќ ¬Ёƒ);
+--type т–езультат—равнени€ = (тћеньше = 1, т–авно, тЅольше);
+--
+--var  одыЁƒ: variant[2] = [["62.01", т—умма6201], ["62.02", т—умма6202], ["62.09", т—умма6202], ["46.51", т—умма4651]];
+--var ѕол€ѕодтаблицы: string[] = ["ƒатаƒокумента", "–еквѕ", "ЌомерЅум", "—умма", "¬идЁд", "—умма", "ќ ¬Ёƒ"];
+
+--proc ƒобавить¬ќтчет(мѕозици€: variant[]);
+----type т олонкиѕодтаблицы = (тѕтƒата = 1, тѕт онтрагент, тѕтЌомер, тѕт—умма¬сего, тѕт¬идЁд, тѕт—умма¬идЁд);
+      if not RecordEdited(Self.Record):
+        ValidRecordEdit(Self.Record);
+      fi;
+      if RecordEdited(Self.Record):
+        if ѕозиции.Count > 0:
+          ѕозиции.Clear;
+        fi;
+        while not q.Eof do
+          --locSub = q.Current.ѕозицииƒеб;
+          for iter = 1 .. q.Current.ѕозицииƒеб.Count do
+            for лок лонкаѕодтаблицы = тѕтƒата .. тѕт¬идЁд do
+             мѕозици€[лок лонкаѕодтаблицы] = q.Current.ѕозицииƒеб.Items[iter].GetField(ѕол€ѕодтаблицы[лок лонкаѕодтаблицы]);
+            end;
+            ƒобавить¬ќтчет(мѕозици€);
+          od;
+          q.Next;
         od;
-      od;
+      else
+        seterror(-1,"Ќе внести изменени€ в документ!", "ќшибка:", itError);
+      fi;
     else
       message('Ќет данных дл€ занесени€ в регистр!');
     fi;
   finally
     q = nil;
   end;
-  if vartype(ares) = varArray and LengthOfArray(ares)>0:
-    if not RecordEdited(Self.Record):
-      ValidRecordEdit(Self.Record);
-    fi;
-    if RecordEdited(Self.Record):
-      if ѕозиции.Count > 0:
-        ѕозиции.Clear;
-      fi;
-      for iter = 1 .. LengthOfArray(ares[1]) do
+--  if vartype(ares) = varArray and LengthOfArray(ares)>0:
+--    if not RecordEdited(Self.Record):
+--      ValidRecordEdit(Self.Record);
+--    fi;
+--    if RecordEdited(Self.Record):
+--      if ѕозиции.Count > 0:
+--        ѕозиции.Clear;
+--      fi;
+--      for iter = 1 .. LengthOfArray(ares[1]) do
+----          locExtId = ares[1, iter];
+----          locDate = ares[2, iter];
+----          locNum = ares[3, iter];
+----          locRekv = ares[4, iter];
+----          locT = ares[5, iter];
+--        if locDate <> ares[1, iter] or locNum <> ares[2, iter] or
+--           locRekv <> ares[3, iter] or locT <> ares[4, iter]:
 --          locExtId = ares[1, iter];
 --          locDate = ares[2, iter];
 --          locNum = ares[3, iter];
 --          locRekv = ares[4, iter];
 --          locT = ares[5, iter];
-        if locDate <> ares[1, iter] or locNum <> ares[2, iter] or
-           locRekv <> ares[3, iter] or locT <> ares[4, iter]:
-          locExtId = ares[1, iter];
-          locDate = ares[2, iter];
-          locNum = ares[3, iter];
-          locRekv = ares[4, iter];
-          locT = ares[5, iter];
-          isub = ѕозиции.Count+1;
-          ѕозиции.Insert(isub);
-          ѕозиции[isub].Ѕанковска€¬ыписка =QueryRecord(Ѕухучет.Ѕанки.¬ыписки, "ExtId='" + locExtId +"'");
-          ѕозиции[isub]. онтрагент        =locRekv;
-          ѕозиции[isub].–еквѕ             =locRekv;
-          --ѕозиции[isub].ѕрихѕлатѕоручение = nil;
-          --ѕозиции[isub].ѕервƒок           = nil;
-          --ѕозиции[isub]. ор—чет           = nil;
-          --ѕозиции[isub].Ѕанк              = nil;
-          --ѕозиции[isub]. одќп             = "";
-          --ѕозиции[isub].Ќом¬ыпƒ           = "";
-          ѕозиции[isub].ƒатаƒокумента     = locDate;
-          ѕозиции[isub].ЌомерЅум          = locNum;
-          ѕозиции[isub].“                 = locT;
-        fi;
-        with ѕозиции[isub].¬идЁƒ do
-          with Insert(Count + 1) do
-            ќ ¬Ёƒ = ares[6, iter]; -- ѕозиции[isub].¬идЁƒ[].ќ ¬Ёƒ
-            —умма = ares[7, iter]; -- ѕозиции[isub].¬идЁƒ[].—умма
-          od;
-        od;
-      od;
-    else
-      seterror(-1,"Ќе внести изменени€ в документ!", "ќшибка:", itError);
-    fi;
-  fi;
+--          isub = ѕозиции.Count+1;
+--          ѕозиции.Insert(isub);
+--          ѕозиции[isub].Ѕанковска€¬ыписка =QueryRecord(Ѕухучет.Ѕанки.¬ыписки, "ExtId='" + locExtId +"'");
+--          ѕозиции[isub]. онтрагент        =locRekv;
+--          ѕозиции[isub].–еквѕ             =locRekv;
+--          --ѕозиции[isub].ѕрихѕлатѕоручение = nil;
+--          --ѕозиции[isub].ѕервƒок           = nil;
+--          --ѕозиции[isub]. ор—чет           = nil;
+--          --ѕозиции[isub].Ѕанк              = nil;
+--          --ѕозиции[isub]. одќп             = "";
+--          --ѕозиции[isub].Ќом¬ыпƒ           = "";
+--          ѕозиции[isub].ƒатаƒокумента     = locDate;
+--          ѕозиции[isub].ЌомерЅум          = locNum;
+--          ѕозиции[isub].“                 = locT;
+--        fi;
+--        with ѕозиции[isub].¬идЁƒ do
+--          with Insert(Count + 1) do
+--            ќ ¬Ёƒ = ares[6, iter]; -- ѕозиции[isub].¬идЁƒ[].ќ ¬Ёƒ
+--            —умма = ares[7, iter]; -- ѕозиции[isub].¬идЁƒ[].—умма
+--          od;
+--        od;
+--      od;
+--    else
+--      seterror(-1,"Ќе внести изменени€ в документ!", "ќшибка:", itError);
+--    fi;
+--  fi;
 end;
 
 
@@ -284,27 +310,27 @@ func ƒл€—равнени€(ѕо олонке: т олонкиѕодтаблицы; «начение: variant): variant;
 end;
 
 --type т–езультат—равнени€ = (тћеньше = 1, т–авно, тЅольше);
---var ѕол€ѕодтаблицы: variant[2] = [["ƒатаƒокумента", тѕтƒата], [" онтрагент", тѕт онтрагент], ["ЌомерЅум", тѕтЌомер]];
---var ѕол€ѕодтаблицы: string[] = ["ƒатаƒокумента", " онтрагент", "ЌомерЅум"];
+--var ѕол€ѕодтаблицы: variant[2] = [["ƒатаƒокумента", тѕтƒата], ["–еквѕ", тѕт онтрагент], ["ЌомерЅум", тѕтЌомер]];
+--var ѕол€ѕодтаблицы: string[] = ["ƒатаƒокумента", "–еквѕ", "ЌомерЅум"];
 --@doc сравнение пол€ подтаблицы со значением
 func —равнить(ѕо олонке: т олонкиѕодтаблицы; «начение: variant; »ндекс: integer): т–езультат—равнени€;
-  var «начение»зѕодтаблицы: variant;
+  var «начение»зѕодтаблицы, «начениеѕараметр: variant;
   if ѕо олонке = тѕтќ ¬Ёƒ:
     «начение»зѕодтаблицы = ƒл€—равнени€(ѕо олонке, ¬идЁƒ.Items[»ндекс].GetField(ѕол€ѕодтаблицы[ѕо олонке]));
   else
     «начение»зѕодтаблицы = ƒл€—равнени€(ѕо олонке, ѕозиции.Items[»ндекс].GetField(ѕол€ѕодтаблицы[ѕо олонке]));
   fi;
-  «начение = ƒл€—равнени€(ѕо олонке, «начение);
-  if «начение < «начение»зѕодтаблицы:
+  «начениеѕараметр = ƒл€—равнени€(ѕо олонке, «начение);
+  if «начениеѕараметр < «начение»зѕодтаблицы:
     return тћеньше;
-  elsif «начение = «начение»зѕодтаблицы:
+  elsif «начениеѕараметр = «начение»зѕодтаблицы:
     return т–авно;
   else
     return тЅольше;
   fi;
 end;
 
---var ѕол€ѕодтаблицы: variant[2] = [["ƒатаƒокумента", тѕтƒата], [" онтрагент", тѕт онтрагент], ["ЌомерЅум", тѕтЌомер]];
+--var ѕол€ѕодтаблицы: variant[2] = [["ƒатаƒокумента", тѕтƒата], ["–еквѕ", тѕт онтрагент], ["ЌомерЅум", тѕтЌомер]];
 --@doc поиск строки в подтаблице: возвращает номер позиции, если найдено, или -отриательный номер позици, в которую надо вставить
 --@doc новое значение дл€ сохранени€ упор€доченности
 func ЌайтиЅыстро¬ѕодтаблице(ѕо олонке: т олонкиѕодтаблицы; «начение: variant; от: integer; до: integer): Integer;
@@ -370,6 +396,7 @@ proc ƒобавить¬ќтчет(мѕозици€: variant[]);
   ito = ѕозиции.Count;
   for iter = тѕтƒата .. тѕтЌомер do
     index = ЌайтиЅыстро¬ѕодтаблице(iter, мѕозици€[iter], ifrom, ito);
+    --index = Ќайти¬ѕодтаблице(iter, мѕозици€[iter], ifrom, ito);
     if index < 0:
       break;
     else
@@ -426,12 +453,32 @@ var iter: integer;
        Select;
        while not Eof do
          –аспределение¬Ёƒ[Current.DocId]=  одыЁƒ[iter, 2] as т олонкиќтчета;
+         next;
        od;
      end;
    fi;
  od;
 end;
 
+func ѕолучить—уммуѕо¬Ёƒ(Index: integer; т олонка: т олонкиќтчета): Numeric;
+  var iter: integer;
+  var ¬идЁƒ: SubTable;
+  ¬идЁƒ = ѕозиции.Items[index].¬идЁƒ;
+  for iter = 1 .. ¬идЁƒ.Count do
+    if –аспределение¬Ёƒ[¬идЁƒ.items[iter].ќ ¬Ёƒ.DocID] = т олонка:
+      result = result + ¬идЁƒ.items[iter].—умма;
+    fi;
+  od;
+end;
+
+  proc шаблон_ѕриќткрытии(Create :Logical);
+    -- ¬ызываетс€ при открыти€ окна формы
+    --   Create: True - форма открываетс€, False - форма восстанавливаетс€ при запуске сессии
+    if –аспределение¬Ёƒ = nil:
+      –аспределитьќ ¬Ёƒпо олонкам;
+    fi;
+    inherited шаблон_ѕриќткрытии(Create);
+  end;
 
 --}
 
@@ -459,7 +506,11 @@ func ѕоле_ѕри¬ыводе(Cell :TemplateCell; Value :Variant;
   --   Value: значение в поле клетки
   --   Action: тип вывода (¬ывод,¬ычисление, опирование,Ёкспорт)
   --   Format: строка-формат вывода значени€
-  Result = Value; -- „то получили, то и выводим
+  if Cell.Contents in ["—умма1", "—умма2", "—умма3", "—умма4", "—умма5"]:
+    result = ѕолучить—уммуѕо¬Ёƒ(Cell.Row, Cell.Column as т олонкиќтчета);
+  else
+    Result = Value; -- „то получили, то и выводим
+  fi;
 end;
 
 func ѕолеѕериод–асчета_ѕри¬ыводе(Cell :TemplateCell; Value :Variant;
