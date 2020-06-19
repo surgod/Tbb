@@ -20,6 +20,8 @@ Group "Регистры";
         field ОКВЭД: Классификаторы.ОКВЭД2 title "Признак ОКВЭД";
         field Сумма: Numeric title "Сумма"; -- часть суммы
       end;
-   end;
+    end;
+    field Руководитель        :string title "Руководитель";
+    field Бухгалтер           :string title "Главный бухгалтер";
   end;
 end;
