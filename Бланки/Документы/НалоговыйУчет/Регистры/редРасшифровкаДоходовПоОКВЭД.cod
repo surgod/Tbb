@@ -107,7 +107,11 @@ proc Заполнитьбланк;
 --  --aFiler[4] = "ПозицииДеб.Дата>=" + str(Период.ДатаНачала);
 --  --aFiler[5] = "ПозицииДеб.Дата<=" + str(Период.ДатаОкончания);
   aFiler[4] = "ДатаПроведения>=" + str(Период.ДатаНачала);
-  aFiler[5] = "ДатаПроведения<=" + str(Период.ДатаОкончания);
+  if ПериодОкончания <> nil:
+    aFiler[5] = "ДатаПроведения<=" + str(ПериодОкончания.ДатаОкончания);
+  else
+    aFiler[5] = "ДатаПроведения<=" + str(Период.ДатаОкончания);
+  fi;
   aFiler[6] = "Рекв=" + str(Рекв);
   q = Query.Create([Бухучет.Банки.Выписки]);
   try
@@ -499,8 +503,51 @@ end;
 func ПолеПериодРасчета_ПриПроверке(Cell :TemplateCell; Index :Integer;
   var Value :Variant) :Logical;
   Result = inherited ПолеПериодРасчета_ПриПроверке(Cell, Index, Value);
-  if Период <> value and Позиции.Count = 0:
-    ОчиститьДоп;
+  if Cell.Contents = "Период.ДатаНачала":
+    if Период <> value and Позиции.Count = 0:
+      ОчиститьДоп;
+    fi;
+  elsif Cell.Contents = "ПериодОкончания.ДатаОкончания":
+    if ПериодОкончания <> value and Позиции.Count = 0:
+      ОчиститьДоп;
+    fi;
+  fi;
+end;
+
+proc ПолеПериодРасчета_ПриВыходе(Cell :TemplateCell; Index :Integer);
+  if Cell.Contents = "Период.ДатаНачала":
+    if ПериодОкончания = nil:
+      ПериодОкончания = Период;
+    elsif Период <> nil and ПериодОкончания.ДатаНачала < Период.ДатаОкончания:
+      ПериодОкончания = Период;
+    elsif Период = nil:
+      ПериодОкончания = nil;
+    fi;
+  elsif Cell.Contents = "ПериодОкончания.ДатаОкончания":
+    if Период = nil:
+      Период = ПериодОкончания;
+    elsif ПериодОкончания <> nil and ПериодОкончания.ДатаНачала < Период.ДатаОкончания:
+      Период = ПериодОкончания;
+    fi;
+  fi;
+end;
+
+func ПолеПериодРасчета_ПриВыводе(Cell :TemplateCell; Value :Variant;
+  Action :Template.OutputTypes; var Format :String) :Variant;
+  if Cell.Contents = "Период.ДатаНачала":
+    Cell.UseMacro = true;
+    if Период <> nil:
+      result = "c " + ДатаВСтрокуСМакро(Период.ДатаНачала);
+    fi;
+  elsif Cell.Contents = "ПериодОкончания.ДатаОкончания":
+    Cell.UseMacro = true;
+    if ПериодОкончания <> nil:
+      result = "по " + ДатаВСтрокуСМакро(ПериодОкончания.ДатаОкончания);
+    elsif Период <> nil:
+      result = "по " + ДатаВСтрокуСМакро(Период.ДатаОкончания);
+    fi;
+  else
+    result = inherited ПолеПериодРасчета_ПриВыводе(Cell, Value, Action, Format);
   fi;
 end;
 
@@ -520,19 +567,6 @@ func Поле_ПриВыводе(Cell :TemplateCell; Value :Variant;
     result = ВзятьПроцВсегоПоКолонке(Cell.Column as тКолонкиОтчета);
   else
     Result = Value; -- Что получили, то и выводим
-  fi;
-end;
-
-func ПолеПериодРасчета_ПриВыводе(Cell :TemplateCell; Value :Variant;
-  Action :Template.OutputTypes; var Format :String) :Variant;
-  if Cell.Contents = "Период.ДатаНачала":
-    Cell.UseMacro = true;
-    result = "c " + ДатаВСтрокуСМакро(Период.ДатаНачала);
-  elsif Cell.Contents = "Период.ДатаОкончания":
-    Cell.UseMacro = true;
-    result = "по " + ДатаВСтрокуСМакро(Период.ДатаОкончания);
-  else
-    result = inherited ПолеПериодРасчета_ПриВыводе(Cell, Value, Action, Format);
   fi;
 end;
 
